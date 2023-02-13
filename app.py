@@ -24,7 +24,7 @@ def check():
 
 def get_cookie(username, userpassword):
     try:
-        url = 'https://ipqlftmgzk.function.microgen.id/api/login'
+        url = 'https://mdenflcjjs.function.microgen.sm.co.id/api/login'
         response1 = requests.post(url,data={'username': username , 'password': userpassword})
         source = str(response1.json()["Set-Cookie"])
         print("add source")
@@ -36,7 +36,7 @@ def get_cookie(username, userpassword):
 def create_notebook(name,source,hostname,port,sqlDB,user,password,database,table,existingTable,query=None,sqlTable=None):
     print("add notebook")
     try:
-        url1 = 'https://ipqlftmgzk.function.microgen.id/api/createnote?'+source+''
+        url1 = 'hhttps://mdenflcjjs.function.microgen.sm.co.id/api/createnote?'+source+''
         response2 = requests.post(url1,json={"name":str(name)})
         data = response2.json()
         sdata = str(data["body"])
@@ -67,14 +67,14 @@ df_load = spark.read.format('jdbc').option('url', 'jdbc:sqlserver://"+hostname+"
 .option('user','"+user+"')\
 .option('password','"+password+"').load()\n\
 df_load.show()"
-            url3 = 'https://ipqlftmgzk.function.microgen.id/api/notebook/'+sdata+'?'+source+''
+            url3 = 'https://mdenflcjjs.function.microgen.sm.co.id/api/notebook/'+sdata+'?'+source+''
             responseget = requests.get(url3)
             data = responseget.json()
             paragraphid = str(data["body"]["paragraphs"][0]["id"])
-            url1 = 'https://ipqlftmgzk.function.microgen.id/api/notebook/'+sdata+'/paragraph/'+paragraphid+'?'+source+''
+            url1 = 'https://mdenflcjjs.function.microgen.sm.co.id/api/notebook/'+sdata+'/paragraph/'+paragraphid+'?'+source+''
             responseput = requests.put(url1,json={"text":str(text)})
             
-            url2 = 'https://ipqlftmgzk.function.microgen.id/api/notebook/'+sdata+'/paragraph?'+source+'' 
+            url2 = 'https://mdenflcjjs.function.microgen.sm.co.id/api/notebook/'+sdata+'/paragraph?'+source+'' 
             text2="%spark2.pyspark\n#df_load.write.format(HiveWarehouseSession().HIVE_WAREHOUSE_CONNECTOR).mode('overwrite')\
 .option('table','"+database+"."+table+"').save()\n"
             requests.post(url2,json={"title": "Paragraph insert revised","text":text1 })
@@ -95,14 +95,14 @@ df_load = spark.read.format('jdbc').option('url', 'jdbc:sqlserver://"+hostname+"
 .option('user','"+user+"')\
 .option('password','"+password+"').load()\n\
 df_load.show()"
-            url3 = 'https://ipqlftmgzk.function.microgen.id/api/notebook/'+sdata+'?'+source+''
+            url3 = 'https://mdenflcjjs.function.microgen.sm.co.id/api/notebook/'+sdata+'?'+source+''
             responseget = requests.get(url3)
             data = responseget.json()
             paragraphid = str(data["body"]["paragraphs"][0]["id"])
-            url1 = 'https://ipqlftmgzk.function.microgen.id/api/notebook/'+sdata+'/paragraph/'+paragraphid+'?'+source+''
+            url1 = 'https://mdenflcjjs.function.microgen.sm.co.id/api/notebook/'+sdata+'/paragraph/'+paragraphid+'?'+source+''
             responseput = requests.put(url1,json={"text":str(text)})
             
-            url2 = 'https://ipqlftmgzk.function.microgen.id/api/notebook/'+sdata+'/paragraph?'+source+'' 
+            url2 = 'https://mdenflcjjs.function.microgen.sm.co.id/api/notebook/'+sdata+'/paragraph?'+source+'' 
             text2="%spark2.pyspark\n#df_load.write.format(HiveWarehouseSession().HIVE_WAREHOUSE_CONNECTOR).mode('append')\
 .option('table','"+database+"."+table+"').save()\n"
             requests.post(url2,json={"title": "Paragraph insert revised","text":text1 })
