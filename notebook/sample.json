@@ -1,0 +1,10 @@
+{
+    "name": "sample_testing",
+    "defaultInterpreterGroup": "spark",
+    "paragraphs": [
+        {
+        "title": "Testing Wait",
+        "text": "%python\nimport time\n\ntime.sleep(20)"
+        }
+    ]
+}

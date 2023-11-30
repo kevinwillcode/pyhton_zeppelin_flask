@@ -1,12 +1,16 @@
-import json
-import os
-import requests
 import pyodbc as pyodbc
-from sys import stderr
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, jsonify
+import os
+
+from zeppelin_api import ZeppelinAPI
+
+ZEPPELIN_URL = os.getenv("ZEPPELIN_URL")
+USERNAME = os.getenv("USERNAME")
+PASSWORD = os.getenv("PASSWORD")
 
 app = Flask(__name__)
-zep_url = "https://10.206.26.42:9995"
+
+zeppelin = ZeppelinAPI(base_url=ZEPPELIN_URL, username=USERNAME, password=PASSWORD)
 
 @app.route('/')
 def hello_geek():
@@ -14,13 +18,24 @@ def hello_geek():
 
 @app.route('/healty')
 def check():
-    
     return jsonify("healty")
 
-@app.route("/get-data")
-async def execute_simulation(machine_name=None):
-    data = await print("test")
-    return jsonify(data)
+@app.route("/calculate")
+def calculate_jip():
+    script={
+                    "paragraphs": [
+                        {
+                        "text": "%python\nimport time\n\ntime.sleep(10)"
+                        },
+                        {
+                        "text": "%python\nimport time\n\ntime.sleep(10)"
+                        },
+                    ]
+                }
+     
+    zeppelin.create_notebook(script=script, default_interpreter="python", uniq_name=True, run_all=True ,delete_after_run=True, check_status=True)
+    
+    return jsonify("Done")
           
 if __name__ == "__main__":
     app.run(debug=True)
