@@ -16,7 +16,7 @@ class ZeppelinAPI:
         self.note_id = None
         self.session = requests.Session()
         self.login()
-
+        
     def login(self):
         try:
             self.session.cookies.clear()
@@ -128,7 +128,7 @@ class ZeppelinAPI:
             raise ValueError(f"Request error occurred: {req_err}")
         except Exception as err:
             raise ValueError(f"An unexpected error occurred: {err}")
-        
+    
     def create_notebook(self, script: dict=None, default_interpreter="spark", uniq_name=False, run_all=False, delete_after_run=False, check_status=False):
         
         if script==None:
@@ -155,7 +155,7 @@ class ZeppelinAPI:
             logging.info("Creating Notebook...")
             
             create_notebook_url = f"{self.base_url}/api/notebook" 
-            response = requests.post(create_notebook_url, cookies=self.__private_session_id , json=script, timeout=10)
+            response = self.session.post(create_notebook_url, cookies=self.__private_session_id , json=script, timeout=10)
             response.raise_for_status()
             
             logging.info(f"Notebook name : '{script['name']}' success create!")

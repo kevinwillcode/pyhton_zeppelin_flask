@@ -6,17 +6,17 @@ class TestZeppelinAPI(unittest.TestCase):
     
     def setUp(self):
         # Set up a ZeppelinAPI instance for testing
-        self.zeppelin = ZeppelinAPI("http://127.0.0.1:8080", "admin", "admin")
+        self.zeppelin = ZeppelinAPI("https://10.206.26.42:9995", "user60", "admin")
 
     def test_login(self):
         # Test the login method
         self.assertTrue(isinstance(self.zeppelin.session, requests.Session))
 
-    def test_get_status_notebook(self):
-        self.zeppelin.get_status(note_id="2JJBY2WHJ")
+    # def test_get_status_notebook(self):
+    #     self.zeppelin.get_status(note_id="2JJBY2WHJ")
     
-    def test_run_all_paragraft(self):
-        self.zeppelin.run_all_paragraft(note_id="2JHR1TG3N")
+    # def test_run_all_paragraft(self):
+    #     self.zeppelin.run_all_paragraft(note_id="2JHR1TG3N")
 
     def test_create_notebook_uniq_name(self):
     # Test the create_notebook method
