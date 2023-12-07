@@ -2,12 +2,13 @@ import requests
 import uuid
 import time
 import logging
+from threading import Thread
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG,  # Set the logging level
                     format='%(asctime)s - %(levelname)s - %(message)s')  # Define the log format
 
-class ZeppelinAPI:
+class ZeppelinAPI():
     def __init__(self, base_url, username, password):
         self.__private_session_id = None
         self.base_url = base_url
@@ -20,9 +21,9 @@ class ZeppelinAPI:
     def login(self):
         try:
             self.session.cookies.clear()
-            print(self.session.cookies.get_dict())
             login_url = f"{self.base_url}/api/login"
             login_payload = {"username": self.username, "password": self.password}
+            logging.debug("Payload : "+ str(login_payload))
             
             response = self.session.post(login_url, data=login_payload, verify=False)
             response.raise_for_status()
@@ -35,29 +36,30 @@ class ZeppelinAPI:
             logging.debug(f"Session ID: {self.__private_session_id}")
             
         except requests.HTTPError as http_err:
-            logging.error(f"HTTP error occurred: {http_err}")
+            logging.error(f"HTTP error occurred: {http_err} ❌")
         except requests.RequestException as req_err:
-            logging.error(f"Request error occurred: {req_err}")
+            logging.error(f"Request error occurred: {req_err} ❌")
         except Exception as err:
-            logging.error(f"An unexpected error occurred: {err}")
+            logging.error(f"An unexpected error occurred: {err} ❌")
 
-    def run_all_paragraft(self, note_id: str=None):
+    def run_all_paragraft(self, note_id: str=None, background_process=False ):
+        execute_all_url = f"{self.base_url}/api/notebook/job/{note_id}" 
+        
         if(note_id == None):
-            raise ValueError("Error: 'note_id' not found")
-            
+            raise ValueError("Error: 'note_id' not found 🔍🤔")
+        
         try:
-            execute_all_url = f"{self.base_url}/api/notebook/job/{note_id}" 
             response = self.session.post(execute_all_url, cookies=self.__private_session_id, timeout=10)
-            logging.info(f"Run all paragraft at notebook ID : {note_id} ✈️")
+            logging.info(f"Run all paragraft at notebook ID : {note_id} 💨")
             return response.json()
             
         except Exception as err:
-            print(f"An unexpected error occurred: {err}")          
+            print(f"An unexpected error occurred: {err} ❌")          
 
-    def get_status(self, note_id=None, interval=1, max_attempts=100000):
+    def get_status(self, note_id=None, interval=0.2, max_attempts=10000000, unlimited_attempts=False):
         if(note_id == None):
-            logging.error("Error: 'note_id' not found")
-            raise ValueError("Error: 'note_id' not found")
+            logging.error("Error: 'note_id' not found 🔍🤔")
+            raise ValueError("Error: 'note_id' not found 🔍🤔")
         
         url_base = f"{self.base_url}/api/notebook/job/{note_id}" 
         
@@ -70,57 +72,70 @@ class ZeppelinAPI:
                 data = response.json()
                 paragraphs = data["body"]["paragraphs"]
                 
-                pending_paragraphs = [paragraph for paragraph in paragraphs if (paragraph["status"] == "RUNNING" ) or (paragraph["status"] == "PENDING" )] # out: array[{'id': 'paragraph_1700720673085_705953182', 'status': 'PENDING', 'started': 'Thu Nov 23 06:33:00 GMT 2023', 'finished': 'Thu Nov 23 06:28:29 GMT 2023', 'progress': '0'}]
+                pending_paragraphs = [paragraph for paragraph in paragraphs if (paragraph["status"] == "RUNNING" ) or (paragraph["status"] == "PENDING" )] # out: array[{'id': 'paragraph_1700720673085_705953182', 'status': 'PENDING', 'started': 'Thu Nov 23 06:33:00 GMT 2023', 'finished': 'Thu Nov 23 06:28:29 GMT 2023', 'progress': '0'}] 
                 
                 # Check Error 
                 error_paragraphs = [paragraph for paragraph in paragraphs if (paragraph["status"] == "ERROR" )] 
                 
                 if len(error_paragraphs) > 0 : 
-                    logging.debug("Notebook Error Running ❌") 
-                    break 
+                    logging.debug("Error Running Notebook ❌") 
+                    return {"status": "Error running notebook", "message": "There is an error in your code. Please check the notebook or contact the developer. 👨‍💻⚒️"}
                 
                 logging.debug("Notebook stiLl running...")
                 
                 if len(pending_paragraphs) == 0:
                     logging.debug("Notebook Running Success ✅")
-                    break
+                    return {"status": "Success running notebook", "message": ""}
                 
             except requests.HTTPError as http_err:
-                logging.error(f"HTTP error occurred: {http_err}")
-                raise ValueError(f"HTTP error occurred: {http_err}")
+                logging.error(f"HTTP error occurred: {http_err} ❌")
+                raise ValueError(f"HTTP error occurred: {http_err} ❌")
             
             except requests.RequestException as req_err:
-                logging.error(f"Request error occurred: {req_err}")
-                raise ValueError(f"Request error occurred: {req_err}")
+                logging.error(f"Request error occurred: {req_err} ❌")
+                raise ValueError(f"Request error occurred: {req_err} ❌")
             
             except Exception as err:
-                logging.error(f"An unexpected error occurred: {err}")
-                raise ValueError(f"An unexpected error occurred: {err}")
+                logging.error(f"An unexpected error occurred: {err} ❌")
+                raise ValueError(f"An unexpected error occurred: {err} ❌")
                 
             attempts += 1
             
+            if unlimited_attempts is True:
+                max_attempts += 1
+            
             time.sleep(interval)
             
-        # return {"status":"Execute All Paragraft Done"}
+        return {"status":"Error", "message": f"notebook running to long, please check your notebook at ID: {note_id}, or contact developer"}
     
-    def delete_note(self, note_id=None):
-        
+    def delete_note(self, note_id=None, background_process=False):
         if(note_id == None):
-            logging.error("Error: 'note_id' not found")
-            raise ValueError("Error: 'note_id' not found")
+            logging.error("Error: 'note_id' not found 🔍🤔")
+            raise ValueError("Error: 'note_id' not found 🔍🤔")
         
         url_base = f"{self.base_url}/api/notebook/{note_id}" 
         
         try:
-            logging.debug(f"Delete Notebook ID {note_id}")
-            response = self.session.delete(url_base, cookies=self.__private_session_id, timeout=10)
-            logging.debug(f"Delete Notebook ID {note_id} Success ✅")
-            response.raise_for_status()  # Raises an HTTPError for bad responses
-        
-            if response.status_code == 200:
-                return response.json() # out: {"status": "OK","message": ""}
-            else:
-                return f"Unexpected status code: {response.status_code}"
+            if background_process is True : 
+                logging.debug("Delete Notebook in background process")
+                def _hit_api():
+                    self.session.delete(url_base, cookies=self.__private_session_id, timeout=10)
+                
+                thread = Thread(target=_hit_api)
+                thread.start()
+                
+                return {"status": f"Delete notebook success", "message": "Delete notebook ID :'{note_id}'"}
+                
+            else: 
+                logging.debug(f"Delete Notebook ID {note_id}")
+                response = self.session.delete(url_base, cookies=self.__private_session_id, timeout=10)
+                logging.debug(f"Delete Notebook ID {note_id} Success ✅")
+                response.raise_for_status()  # Raises an HTTPError for bad responses
+            
+                if response.status_code == 200:
+                    return response.json() # out: {"status": "OK","message": ""}
+                else:
+                    return {"status": "Error Delete Notebook", "message": f"Unexpected status code: {response.status_code}"}
         
         except requests.exceptions.HTTPError as http_err:
             raise ValueError(f"HTTP error occurred: {http_err}")
@@ -194,4 +209,4 @@ class ZeppelinAPI:
             logging.error(f"An unexpected error occurred: {err}")
             raise ValueError(f"An unexpected error occurred: {err}")
             # print(f"An unexpected error occurred: {err}")
-  
+

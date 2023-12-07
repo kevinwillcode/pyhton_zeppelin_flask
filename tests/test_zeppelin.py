@@ -1,12 +1,26 @@
 import unittest
 from zeppelin_api import ZeppelinAPI
 import requests
+from dotenv import load_dotenv
+import os 
+
+load_dotenv()
+
+from utils.calculate import calculate_jip
+
+ZEPPELIN_URL = os.getenv("ZEPPELIN_URL")
+USERZEP = os.getenv("USERZEP")
+PASSWORD = os.getenv("PASSWORD")
 
 class TestZeppelinAPI(unittest.TestCase):
     
     def setUp(self):
+        print(ZEPPELIN_URL)
         # Set up a ZeppelinAPI instance for testing
-        self.zeppelin = ZeppelinAPI("https://10.206.26.42:9995", "user60", "admin")
+        self.zeppelin = ZeppelinAPI(ZEPPELIN_URL, USERZEP, PASSWORD)
+        
+        self.calculate = calculate_jip 
+        
 
     def test_login(self):
         # Test the login method
@@ -44,6 +58,32 @@ class TestZeppelinAPI(unittest.TestCase):
                 }
         
         self.assertEqual(self.zeppelin.create_notebook(script=script, default_interpreter="python", uniq_name=True, run_all=True ,delete_after_run=True, check_status=True)['status'],"OK")
+        
+    def test_script_with_parameter(self):
+        machine_name = "OPJ"
+        as_of_week = 1234
+        
+        result = calculate_jip(machine_name=machine_name, as_of_week=as_of_week)['paragraphs'][0]['text']
+        
+        self.assertTrue('OPJ' in result)
+        
+    def test_create_run_delete_script(self):
+        import threading
+        script_test = {
+                    "name": "sample_testing",
+                    "defaultInterpreterGroup": "python",
+                    "paragraphs": [
+                        {
+                        "title": "Testing Wait",
+                        "text": "%python\nimport time\n\ntime.sleep(5)"
+                        }
+                    ]
+                }
+        
+        response = self.zeppelin.create_notebook(script=script_test, uniq_name=True, run_all=True, check_status=True) # out : {'status': 'OK', 'message': '', 'body': '2JH177N4Y'}
+        print(response['body'])
+        
+        self.zeppelin.delete_note(note_id=response['body'], thread_status=True)
         
 if __name__ == '__main__':
     unittest.main()
