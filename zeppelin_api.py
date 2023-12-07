@@ -49,14 +49,24 @@ class ZeppelinAPI():
             raise ValueError("Error: 'note_id' not found 🔍🤔")
         
         try:
-            response = self.session.post(execute_all_url, cookies=self.__private_session_id, timeout=10)
-            logging.info(f"Run all paragraft at notebook ID : {note_id} 💨")
-            return response.json()
+            if background_process is True : 
+                logging.debug("Run all Notebook in background process")
+                def _hit_api():
+                    self.session.post(execute_all_url, cookies=self.__private_session_id, timeout=10, verify=False)
+                
+                thread = Thread(target=_hit_api)
+                thread.start()
+                return {"status": "Run all notebook execute in background process"}
+            else: 
+                response = self.session.post(execute_all_url, cookies=self.__private_session_id, timeout=10, verify=False)
+                logging.info(f"Run all paragraft at notebook ID : {note_id} 💨")
+                return response.json()
+            
             
         except Exception as err:
             print(f"An unexpected error occurred: {err} ❌")          
 
-    def get_status(self, note_id=None, interval=0.2, max_attempts=10000000, unlimited_attempts=False):
+    def get_status(self, note_id=None, interval=0.8, max_attempts=10000000, unlimited_attempts=False):
         if(note_id == None):
             logging.error("Error: 'note_id' not found 🔍🤔")
             raise ValueError("Error: 'note_id' not found 🔍🤔")
@@ -66,7 +76,7 @@ class ZeppelinAPI():
         attempts = 0
         while attempts < max_attempts:
             try:
-                response = self.session.get(url_base, cookies=self.__private_session_id, timeout=10)
+                response = self.session.get(url_base, cookies=self.__private_session_id, timeout=10, verify=False)
                 response.raise_for_status()  # Raises an HTTPError for bad responses
                 # print(response.json())  # Assuming the response is in JSON format
                 data = response.json()
@@ -119,7 +129,7 @@ class ZeppelinAPI():
             if background_process is True : 
                 logging.debug("Delete Notebook in background process")
                 def _hit_api():
-                    self.session.delete(url_base, cookies=self.__private_session_id, timeout=10)
+                    self.session.delete(url_base, cookies=self.__private_session_id, timeout=10, verify=False)
                 
                 thread = Thread(target=_hit_api)
                 thread.start()
@@ -128,7 +138,7 @@ class ZeppelinAPI():
                 
             else: 
                 logging.debug(f"Delete Notebook ID {note_id}")
-                response = self.session.delete(url_base, cookies=self.__private_session_id, timeout=10)
+                response = self.session.delete(url_base, cookies=self.__private_session_id, timeout=10, verify=False)
                 logging.debug(f"Delete Notebook ID {note_id} Success ✅")
                 response.raise_for_status()  # Raises an HTTPError for bad responses
             
@@ -209,4 +219,3 @@ class ZeppelinAPI():
             logging.error(f"An unexpected error occurred: {err}")
             raise ValueError(f"An unexpected error occurred: {err}")
             # print(f"An unexpected error occurred: {err}")
-

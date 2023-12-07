@@ -5,7 +5,7 @@ import os
 
 
 from zeppelin_api import ZeppelinAPI
-from utils.calculate import calculate_jip
+from utils.calculate import calculate_jip, combine_notebook
 
 ZEPPELIN_URL = os.getenv("ZEPPELIN_URL")
 USERZEP = os.getenv("USERZEP")
@@ -66,37 +66,40 @@ def notebook():
 def calculate_jip_execute():
     machine_name = request.args.get("machineName")
     as_of_week = request.args.get("asOfWeek")
+    note_code = request.args.get("noteCode")
+    uniq_name = request.args.get("uniqName")
     
     script_calculate = calculate_jip(machine_name=machine_name, as_of_week=int(as_of_week))
+    # script_combine = combine_notebook()
     
     try:
-        script_test = {
-                    "name": "sample_testing",
-                    "defaultInterpreterGroup": "python",
-                    "paragraphs": [
-                        {
-                        "title": "Testing Wait",
-                        "text": "%python\nimport time\n\ntime.sleep(1)"
-                        }
-                    ]
-                }
+        # script_test = {
+        #             "name": "sample_testing",
+        #             "defaultInterpreterGroup": "python",
+        #             "paragraphs": [
+        #                 {
+        #                 "title": "Testing Wait",
+        #                 "text": "%python\nimport time\n\ntime.sleep(1)"
+        #                 }
+        #             ]
+        #         }
         
-        response = zeppelin.create_notebook(
-            script=script_test,
+        zeppelin.create_notebook(
+            script = script_calculate,
             run_all=bool(request.args.get('runAll')),
             check_status=bool(request.args.get('checkStatus')),
-            uniq_name=bool(True)
+            uniq_name=bool(False)
         ) # out : {'status': 'OK', 'message': '', 'body': '2JH177N4Y'}
         
-        
         # Delete Notebook
-        logging.debug('Delete notebook in background process')
-        zeppelin.delete_note(note_id=response['body'], background_process=True)
-        logging.debug('Delete notebook in background process Success')
+        # logging.debug('Delete notebook in background process')
+        # zeppelin.delete_note(note_id=response['body'], background_process=True)
+        # logging.debug('Delete notebook in background process Success')
         
-        logging.debug('Running notebook Success')
-        zeppelin.run_all_paragraft(note_id="2JM1XMAC8")
-        
+        # Running Notebook for combine data machine
+        # zeppelin.create_notebook(note_id=script_combine, background_process=True)
+        zeppelin.run_all_paragraft(note_id="2JGUTCS7J", background_process=True)
+        # logging.debug('Running notebook Success')
         
         # return the response from Zeppelin API
         return {"status" : "Done", 
