@@ -16,7 +16,6 @@ if ZEPPELIN_URL is None or USERZEP is None or PASSWORD is None:
     raise ValueError("One or more required environment variables are not set.")
 
 app = Flask(__name__)
-# executor = ThreadPoolExecutor()
 
 zeppelin = ZeppelinAPI(base_url=ZEPPELIN_URL, username=USERZEP, password=PASSWORD)
 
@@ -78,13 +77,8 @@ def calculate_jip_execute():
             script = script_calculate,
             run_all=bool(request.args.get('runAll')),
             check_status=bool(request.args.get('checkStatus')),
-            uniq_name=bool(False)
+            uniq_name=bool(True)
         ) # out : {'status': 'OK', 'message': '', 'body': '2JH177N4Y'}
-        
-        # Delete Notebook
-        # logging.debug('Delete notebook in background process')
-        # zeppelin.delete_note(note_id=response['body'], background_process=True)
-        # logging.debug('Delete notebook in background process Success')
         
         # Running Notebook for combine data machine
         # zeppelin.create_notebook(note_id=script_combine, background_process=True)

@@ -87,6 +87,9 @@ class TestZeppelinAPI(unittest.TestCase):
     def test_delete_all_notebook(self):
         print(self.zeppelin.delete_note(delete_all=True))
         
+    def test_list_notebook(self):
+        print(self.zeppelin.list_notebook())
+        
         
 if __name__ == '__main__':
     unittest.main()

@@ -40,17 +40,23 @@ class ZeppelinAPI():
         except requests.RequestException as req_err:
             logging.error(f"Request error occurred: {req_err} ❌")
         except Exception as err:
-            logging.error(f"An unexpected error occurred: {err} ❌")
-
-    def run_all_paragraft(self, note_id: str=None, background_process=False ):
+            logging.error(f"An unexpected error occurred: {err} ❌")        
+        
+    def run_all_paragraft(self, note_id: str=None, background_process=False, notebook_name=None ):
         execute_all_url = f"{self.base_url}/api/notebook/job/{note_id}" 
         
-        if(note_id == None):
-            raise ValueError("Error: 'note_id' not found 🔍🤔")
+        if(note_id == None and notebook_name==None):
+            raise ValueError("Error: 'note_id or notebook name' not assign 🔍🤔")
         
         try:
             if background_process is True : 
-                logging.debug("Run all Notebook in background process")
+                
+                if notebook_name is not None:
+                    
+                    
+                    
+                    
+                logging.debug("Run all Notebook in background process..")
                 def _hit_api():
                     self.session.post(execute_all_url, cookies=self.__private_session_id, timeout=10, verify=False)
                 
@@ -60,9 +66,7 @@ class ZeppelinAPI():
             else: 
                 response = self.session.post(execute_all_url, cookies=self.__private_session_id, timeout=10, verify=False)
                 logging.info(f"Run all paragraft at notebook ID : {note_id} 💨")
-                return response.json()
-            
-            
+                return response.json()     
         except Exception as err:
             print(f"An unexpected error occurred: {err} ❌")          
 
@@ -178,6 +182,49 @@ class ZeppelinAPI():
         except Exception as err:
             raise ValueError(f"An unexpected error occurred: {err}")
         
+    def list_notebook(self):
+        """
+        Return response from zeppelin api to get notebook
+        @rtype : Object in array
+        @return: [{"id": "2JJVDUPS3","path": "/name_notebook1"},{"id": "2JHCCXS4J","path": "/name_notebook2"}]
+        """
+        
+        list_notebook_url = f"{self.base_url}/api/notebook" 
+        
+        try:
+            response = self.session.get(list_notebook_url, cookies=self.__private_session_id, timeout=10, verify=False)
+            logging.debug(f"Get list notebook... 🗒️")
+            response.raise_for_status()
+            return response.json()['body']
+        
+        except Exception as err:
+            logging.error(f"An unexpected error occurred when get list notebook: {err} ❌")
+            return {"status": "Error", "message" : "An unexpected error occurred when get list notebook"}
+        
+
+    def search_notebook(self, search:str = None):
+        """
+        @
+        """
+        data_list = self.list_notebook()
+        
+        search_text = search
+        
+        # Iterate through the list to find the matching path
+        matching_objects = [obj for obj in data_list if search_text in obj["path"]]
+
+        # Check if any matching objects were found
+        if matching_objects:
+            # Print the id(s) associated with the matching path(s)
+            for obj in matching_objects:
+                logging.debug(f"Found id '{obj['id']}' for path '{obj['path']}'")
+                return obj # {"id": "2JJVYCGKM","path": "/name_notebook"}
+                
+            else:
+                logging.warning(f"[search notebook] Notebook {search_text} not found!")
+                return {"status": "Not Found", "message": f"Notebook {search_text} not found"}
+                
+        
     def create_notebook(self, script: dict=None, default_interpreter="spark", uniq_name=False, run_all=False, delete_after_run=False, check_status=False):
         
         if script==None:
@@ -185,10 +232,11 @@ class ZeppelinAPI():
             raise ValueError("Script not found, are you add script?🤔")
         
         # Validate name notebook
-        if(uniq_name or 'name' not in script):
-            unique_id = str(uuid.uuid4())
-            script['name'] = unique_id
-            logging.debug(f"Name notebook change to :'{unique_id}'")
+        if(uniq_name is True or 'name' not in script):
+            unique_id = str(uuid.uuid4()).split("-")[0]
+            print("UNIQ ID: "+ unique_id)
+            script['name'] = script['name'] + unique_id 
+            logging.debug(f"Name notebook change to :'{script['name']}'")
             
         # Validate Paragraft must be add
         if "paragraphs" not in script:
