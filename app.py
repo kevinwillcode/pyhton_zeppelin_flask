@@ -64,25 +64,15 @@ def notebook():
 
 @app.route("/calculate_jip", methods=['POST'])
 def calculate_jip_execute():
-    machine_name = request.args.get("machineName")
-    as_of_week = request.args.get("asOfWeek")
-    note_code = request.args.get("noteCode")
-    uniq_name = request.args.get("uniqName")
+    machine_name = request.args.get("machineName") # OPJ
+    as_of_week = request.args.get("asOfWeek") # 2367
+    combine_note = request.args.get("combineNote") # 2JH177N4Y
+    uniq_name = request.args.get("uniqName") # "sample_notebook"
     
     script_calculate = calculate_jip(machine_name=machine_name, as_of_week=int(as_of_week))
-    # script_combine = combine_notebook()
+    script_combine = combine_notebook()
     
     try:
-        # script_test = {
-        #             "name": "sample_testing",
-        #             "defaultInterpreterGroup": "python",
-        #             "paragraphs": [
-        #                 {
-        #                 "title": "Testing Wait",
-        #                 "text": "%python\nimport time\n\ntime.sleep(1)"
-        #                 }
-        #             ]
-        #         }
         
         zeppelin.create_notebook(
             script = script_calculate,
@@ -98,7 +88,7 @@ def calculate_jip_execute():
         
         # Running Notebook for combine data machine
         # zeppelin.create_notebook(note_id=script_combine, background_process=True)
-        zeppelin.run_all_paragraft(note_id="2JGUTCS7J", background_process=True)
+        zeppelin.run_all_paragraft(note_id=str(combine_note), background_process=True)
         # logging.debug('Running notebook Success')
         
         # return the response from Zeppelin API

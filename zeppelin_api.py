@@ -32,7 +32,7 @@ class ZeppelinAPI():
             self.__private_session_id = self.session.cookies.get_dict()
             
             # Use logging instead of print
-            logging.info("Login Success")
+            logging.info(f"Zeppelin at '{self.base_url}' connected! 🎉")
             logging.debug(f"Session ID: {self.__private_session_id}")
             
         except requests.HTTPError as http_err:
@@ -118,12 +118,13 @@ class ZeppelinAPI():
             
         return {"status":"Error", "message": f"notebook running to long, please check your notebook at ID: {note_id}, or contact developer"}
     
-    def delete_note(self, note_id=None, background_process=False):
-        if(note_id == None):
+    def delete_note(self, note_id=None, delete_all=False, background_process=False):
+        
+        if((note_id == None) and delete_all == False ):
             logging.error("Error: 'note_id' not found 🔍🤔")
             raise ValueError("Error: 'note_id' not found 🔍🤔")
         
-        url_base = f"{self.base_url}/api/notebook/{note_id}" 
+        url_base = f"{self.base_url}/api/notebook/" 
         
         try:
             if background_process is True : 
@@ -136,9 +137,30 @@ class ZeppelinAPI():
                 
                 return {"status": f"Delete notebook success", "message": "Delete notebook ID :'{note_id}'"}
                 
+            elif (delete_all is True) : 
+                
+                logging.warning("All Notebook Will be Delete! 😱")
+                
+                url_list_notebook = f"{self.base_url}/api/notebook"
+                list_notebook = self.session.get(url_list_notebook, cookies=self.__private_session_id, timeout=10, verify=False)
+                
+                for note in list_notebook.json()['body']:
+                    print(url_base+note['id'])
+                    logging.debug(f"Delete Notebook ID {note['id']}")
+                    response = self.session.delete(str(url_base+note['id']), cookies=self.__private_session_id, timeout=10, verify=False)
+                    logging.debug(f"Delete Notebook ID {note['id']} Success ✅")
+                    response.raise_for_status()  # Raises an HTTPError for bad responses
+                
+                    if response.status_code == 200:
+                        logging.info(response.json())  # out: {"status": "OK","message": ""}
+                    else:
+                        logging.error(str({"status": "Error Delete Notebook", "message": f"Unexpected status code: {response.status_code}"})) 
+                        break 
+                
+                
             else: 
                 logging.debug(f"Delete Notebook ID {note_id}")
-                response = self.session.delete(url_base, cookies=self.__private_session_id, timeout=10, verify=False)
+                response = self.session.delete(url_base+note_id, cookies=self.__private_session_id, timeout=10, verify=False)
                 logging.debug(f"Delete Notebook ID {note_id} Success ✅")
                 response.raise_for_status()  # Raises an HTTPError for bad responses
             
@@ -146,6 +168,8 @@ class ZeppelinAPI():
                     return response.json() # out: {"status": "OK","message": ""}
                 else:
                     return {"status": "Error Delete Notebook", "message": f"Unexpected status code: {response.status_code}"}
+                
+            
         
         except requests.exceptions.HTTPError as http_err:
             raise ValueError(f"HTTP error occurred: {http_err}")
@@ -153,7 +177,7 @@ class ZeppelinAPI():
             raise ValueError(f"Request error occurred: {req_err}")
         except Exception as err:
             raise ValueError(f"An unexpected error occurred: {err}")
-    
+        
     def create_notebook(self, script: dict=None, default_interpreter="spark", uniq_name=False, run_all=False, delete_after_run=False, check_status=False):
         
         if script==None:

@@ -39,7 +39,7 @@ def combine_notebook():
     
     template = """
     {
-    "name": "calculate_jip",
+    "name": "combine_notebook",
     "defaultInterpreterGroup": "spark_jip",
     "paragraphs": [
             {
@@ -49,7 +49,7 @@ def combine_notebook():
     }
     """
     
-    text = "%spark2.pyspark\ndatabase = \"dev_jip_simulasi\"\ndf = spark.sql(\"show tables in dev_jip_simulasi\")\n\ndf_table = df.select(\"tablename\")\n# df_table.show()\n\ntable_names = df_table.rdd.map(lambda row: row[0]).collect()\nresult_df = None \n\n# Iterate over the table names\nfor table_name in table_names:\n    # Add Database \n    table_name = database + \".\" + table_name\n    print(table_name)\n    \n    # Check if the table exists\n    if spark._jsparkSession.catalog().tableExists(table_name):\n        # Read data from the table\n        current_table_df = spark.read.table(table_name)\n        \n        # Union with the result DataFrame\n        if result_df is None: \n            result_df = current_table_df\n        else:\n            result_df = result_df.union(current_table_df)\n    else:\n        print(f\"Table {table_name} does not exist.\")\n        \nif result_df is not None:\n    result_df.write.format(\"parquet\") \\\n        .mode(\"overwrite\") \\\n        .saveAsTable(\"dev_jip.jip_result_simulation\")\n        \n    print(\"Create Table Success\")\nelse:\n    print(\"No tables available for union\")\n"
+    text = "%spark2.pyspark\ndatabase = \"dev_jip_simulasi\"\ndf = spark.sql(\"show tables in dev_jip_simulasi\")\n\ndf_table = df.select(\"tablename\")\n# df_table.show()\n\ntable_names = df_table.rdd.map(lambda row: row[0]).collect()\nresult_df = None \n\n# Iterate over the table names\nfor table_name in table_names:\n    # Add Database \n    table_name = database + \".\" + table_name\n    print(table_name)\n    \n    # Check if the table exists\n    if spark._jsparkSession.catalog().tableExists(table_name):\n        # Read data from the table\n        spark.sql(f\"REFRESH TABLE {table_name}\")\n        current_table_df = spark.read.table(table_name)\n        \n        # Union with the result DataFrame\n        if result_df is None: \n            result_df = current_table_df\n        else:\n            result_df = result_df.union(current_table_df)\n    else:\n        print(f\"Table {table_name} does not exist.\")\n        \nif result_df is not None:\n    result_df.write.format(\"parquet\") \\\n        .mode(\"overwrite\") \\\n        .saveAsTable(\"dev_jip.jip_result_simulation\")\n        \n    print(\"Create Table Success\")\nelse:\n    print(\"No tables available for union\")\n"
 
     logging.debug("Load template json..")
     data = json.loads(template)

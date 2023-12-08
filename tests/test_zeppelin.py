@@ -68,7 +68,6 @@ class TestZeppelinAPI(unittest.TestCase):
         self.assertTrue('OPJ' in result)
         
     def test_create_run_delete_script(self):
-        import threading
         script_test = {
                     "name": "sample_testing",
                     "defaultInterpreterGroup": "python",
@@ -84,6 +83,10 @@ class TestZeppelinAPI(unittest.TestCase):
         print(response['body'])
         
         self.zeppelin.delete_note(note_id=response['body'], thread_status=True)
+        
+    def test_delete_all_notebook(self):
+        print(self.zeppelin.delete_note(delete_all=True))
+        
         
 if __name__ == '__main__':
     unittest.main()
