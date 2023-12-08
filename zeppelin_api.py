@@ -48,14 +48,13 @@ class ZeppelinAPI():
         if(note_id == None and notebook_name==None):
             raise ValueError("Error: 'note_id or notebook name' not assign 🔍🤔")
         
+        if notebook_name is not None:
+            note_id = self.search_notebook(search=notebook_name)['note_id'] # out: {"id": "2JJVYCGKM","path": "/name_notebook"}
+            
+        # IN HERE
+        
         try:
             if background_process is True : 
-                
-                if notebook_name is not None:
-                    
-                    
-                    
-                    
                 logging.debug("Run all Notebook in background process..")
                 def _hit_api():
                     self.session.post(execute_all_url, cookies=self.__private_session_id, timeout=10, verify=False)
@@ -173,8 +172,6 @@ class ZeppelinAPI():
                 else:
                     return {"status": "Error Delete Notebook", "message": f"Unexpected status code: {response.status_code}"}
                 
-            
-        
         except requests.exceptions.HTTPError as http_err:
             raise ValueError(f"HTTP error occurred: {http_err}")
         except requests.exceptions.RequestException as req_err:
@@ -202,14 +199,14 @@ class ZeppelinAPI():
             return {"status": "Error", "message" : "An unexpected error occurred when get list notebook"}
         
 
-    def search_notebook(self, search:str = None):
+    def search_notebook(self, search_text:str = None):
         """
-        @
+        
         """
+        logging.info(f"Search notebook '{search_text}'")
         data_list = self.list_notebook()
         
-        search_text = search
-        
+        logging.debug("[search notebook] filter notebook...")
         # Iterate through the list to find the matching path
         matching_objects = [obj for obj in data_list if search_text in obj["path"]]
 
@@ -217,8 +214,8 @@ class ZeppelinAPI():
         if matching_objects:
             # Print the id(s) associated with the matching path(s)
             for obj in matching_objects:
-                logging.debug(f"Found id '{obj['id']}' for path '{obj['path']}'")
-                return obj # {"id": "2JJVYCGKM","path": "/name_notebook"}
+                logging.debug(f"[search notebook] Found id '{obj['id']}' for path '{obj['path']}'")
+                return dict(obj) # out: {"id": "2JJVYCGKM","path": "/name_notebook"}
                 
             else:
                 logging.warning(f"[search notebook] Notebook {search_text} not found!")

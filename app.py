@@ -82,7 +82,7 @@ def calculate_jip_execute():
         
         # Running Notebook for combine data machine
         # zeppelin.create_notebook(note_id=script_combine, background_process=True)
-        zeppelin.run_all_paragraft(note_id=str(combine_note), background_process=True)
+        zeppelin.run_all_paragraft(note_id=str(combine_note), background_process=True,)
         # logging.debug('Running notebook Success')
         
         # return the response from Zeppelin API
