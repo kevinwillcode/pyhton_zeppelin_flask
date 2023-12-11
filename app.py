@@ -3,9 +3,6 @@ from flask import Flask, jsonify, request
 import logging
 import os
 
-load_dotenv('/.env')
-
-
 from zeppelin_api import ZeppelinAPI
 from utils.calculate import calculate_jip, combine_notebook, sample_notebook
 
@@ -76,6 +73,7 @@ def calculate_jip_execute():
     # script_sample = sample_notebook()
     
     try:
+        # Create Notebook calculate
         zeppelin.create_notebook(
             script = script_calculate,
             run_all=bool(request.args.get('runAll')),

@@ -22,5 +22,6 @@ ENV ZEPPELIN_URL https://10.206.26.42:9995
 ENV USERZEP user50
 ENV PASSWORD admin
 
-# Run app.py when the container launches
-CMD ["python", "app.py"]
+EXPOSE 5000
+
+CMD ["gunicorn", "wsgi:app", "-b", "0.0.0.0:5000"]
