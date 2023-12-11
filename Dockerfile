@@ -18,7 +18,9 @@ RUN pip install -r requirements.txt
 EXPOSE 5000
 
 # Define environment variable
-ENV NAME World
+ENV ZEPPELIN_URL https://10.206.26.42:9995
+ENV USERZEP user50
+ENV PASSWORD admin
 
 # Run app.py when the container launches
 CMD ["python", "app.py"]

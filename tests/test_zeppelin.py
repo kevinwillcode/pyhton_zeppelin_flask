@@ -90,6 +90,32 @@ class TestZeppelinAPI(unittest.TestCase):
     def test_list_notebook(self):
         print(self.zeppelin.list_notebook())
         
+    def test_search_notebook(self):
+        key_search = "calculate"
+        print(self.zeppelin.search_notebook(search_text=key_search))
+    
+    def test_check_create_notebook(self):
         
+        key_search = "calculate"
+        
+        check_note = self.zeppelin.search_notebook(search_text=key_search) # {'id': '2JJEGXX4B', 'path': '/calculate'} or {'status': 'Not found', 'message': 'Notebook calculate not found'}
+        
+        if check_note is None: 
+            script_test = {
+                    "name": "calculate",
+                    "defaultInterpreterGroup": "python",
+                    "paragraphs": [
+                        {
+                        "title": "Testing Wait",
+                        "text": "%python\nimport time\n\ntime.sleep(5)"
+                        }
+                    ]
+                }
+            response = self.zeppelin.create_notebook(script=script_test, uniq_name=False, run_all=False, check_status=False, notebook_name=key_search) # out : {'status': 'OK', 'message': '', 'body': '2JH177N4Y'}
+            print(response)
+        else: 
+            response = self.zeppelin.run_all_paragraft(note_id=str(check_note['id']))
+            print(response)
+            
 if __name__ == '__main__':
     unittest.main()

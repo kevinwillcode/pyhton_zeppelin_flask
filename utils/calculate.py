@@ -58,3 +58,17 @@ def combine_notebook():
     data['paragraphs'][0]['text'] = text
 
     return data
+
+def sample_notebook():
+    script_test = {
+        "name": "calculate",
+        "defaultInterpreterGroup": "python",
+        "paragraphs": [
+            {
+            "title": "Testing Wait",
+            "text": "%python\nimport time\n\ntime.sleep(5)"
+            }
+        ]
+    }
+    
+    return dict(script_test)

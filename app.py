@@ -3,9 +3,11 @@ from flask import Flask, jsonify, request
 import logging
 import os
 
+load_dotenv('/.env')
+
 
 from zeppelin_api import ZeppelinAPI
-from utils.calculate import calculate_jip, combine_notebook
+from utils.calculate import calculate_jip, combine_notebook, sample_notebook
 
 ZEPPELIN_URL = os.getenv("ZEPPELIN_URL")
 USERZEP = os.getenv("USERZEP")
@@ -65,14 +67,15 @@ def notebook():
 def calculate_jip_execute():
     machine_name = request.args.get("machineName") # OPJ
     as_of_week = request.args.get("asOfWeek") # 2367
-    combine_note = request.args.get("combineNote") # 2JH177N4Y
     uniq_name = request.args.get("uniqName") # "sample_notebook"
     
     script_calculate = calculate_jip(machine_name=machine_name, as_of_week=int(as_of_week))
     script_combine = combine_notebook()
     
+    # Sample Notebook
+    # script_sample = sample_notebook()
+    
     try:
-        
         zeppelin.create_notebook(
             script = script_calculate,
             run_all=bool(request.args.get('runAll')),
@@ -80,13 +83,28 @@ def calculate_jip_execute():
             uniq_name=bool(True)
         ) # out : {'status': 'OK', 'message': '', 'body': '2JH177N4Y'}
         
-        # Running Notebook for combine data machine
-        # zeppelin.create_notebook(note_id=script_combine, background_process=True)
-        zeppelin.run_all_paragraft(note_id=str(combine_note), background_process=True,)
-        # logging.debug('Running notebook Success')
+        # Combine result Calculate
+        note_name = "calculate"
+        check_note = zeppelin.search_notebook(search_text=note_name) # {'id': '2JJEGXX4B', 'path': '/calculate'} or None
         
-        # return the response from Zeppelin API
-        return {"status" : "Done", 
+        if check_note is None:             
+            logging.debug("[CALCULATE JIP] - create notebook")
+            zeppelin.create_notebook(script=script_combine, uniq_name=False, run_all=True, check_status=False, notebook_name=note_name) # out : {'status': 'OK', 'message': '', 'body': '2JH177N4Y'}
+            
+            return {"status" : "Done", 
+                "calculate" : {
+                    "as_of_week" : as_of_week,
+                    "machine" : machine_name
+                    },
+                "message": f"Calculate has been execute"}
+            
+        else: 
+            # Running Notebook for combine data machine
+            logging.debug(f"[CALCULATE JIP] - Notebook '{note_name}' found !")
+            zeppelin.run_all_paragraft(note_id=str(check_note['id']))
+            logging.debug(f"[CALCULATE JIP] - Running notebook '{note_name}' Success")
+            
+            return {"status" : "Done", 
                 "calculate" : {
                     "as_of_week" : as_of_week,
                     "machine" : machine_name
@@ -98,6 +116,6 @@ def calculate_jip_execute():
         logging.exception("An error occurred: %s", str(e))
         # You may want to return an appropriate error response to the client
         return jsonify(error=f"An error occurred {str(e)}"), 500
-    
+
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5000)

@@ -45,14 +45,13 @@ class ZeppelinAPI():
     def run_all_paragraft(self, note_id: str=None, background_process=False, notebook_name=None ):
         execute_all_url = f"{self.base_url}/api/notebook/job/{note_id}" 
         
-        if(note_id == None and notebook_name==None):
+        if(note_id is None or (note_id is not None and notebook_name is not None)):
             raise ValueError("Error: 'note_id or notebook name' not assign 🔍🤔")
         
         if notebook_name is not None:
             note_id = self.search_notebook(search=notebook_name)['note_id'] # out: {"id": "2JJVYCGKM","path": "/name_notebook"}
             
         # IN HERE
-        
         try:
             if background_process is True : 
                 logging.debug("Run all Notebook in background process..")
@@ -64,8 +63,8 @@ class ZeppelinAPI():
                 return {"status": "Run all notebook execute in background process"}
             else: 
                 response = self.session.post(execute_all_url, cookies=self.__private_session_id, timeout=10, verify=False)
-                logging.info(f"Run all paragraft at notebook ID : {note_id} 💨")
-                return response.json()     
+                logging.info(f"Run all paragraft at notebook ID : {note_id} Done💨 ")
+                return dict({"status": "OK", 'message': f"Running Notebook '{notebook_name or note_id}' success"})
         except Exception as err:
             print(f"An unexpected error occurred: {err} ❌")          
 
@@ -198,34 +197,30 @@ class ZeppelinAPI():
             logging.error(f"An unexpected error occurred when get list notebook: {err} ❌")
             return {"status": "Error", "message" : "An unexpected error occurred when get list notebook"}
         
-
     def search_notebook(self, search_text:str = None):
         """
-        
+        Search Notebook
         """
         logging.info(f"Search notebook '{search_text}'")
         data_list = self.list_notebook()
         
         logging.debug("[search notebook] filter notebook...")
         # Iterate through the list to find the matching path
-        matching_objects = [obj for obj in data_list if search_text in obj["path"]]
-
+        matching_objects = [obj for obj in data_list if ("/" + search_text.lower().strip()) == str(obj["path"]).lower().strip()]
         # Check if any matching objects were found
-        if matching_objects:
+        if len(matching_objects) > 0:
             # Print the id(s) associated with the matching path(s)
             for obj in matching_objects:
-                logging.debug(f"[search notebook] Found id '{obj['id']}' for path '{obj['path']}'")
+                logging.debug(f"[SEARCH NOTEBOOK] - Found id '{obj['id']}' for path '{obj['path']}'")
                 return dict(obj) # out: {"id": "2JJVYCGKM","path": "/name_notebook"}
-                
-            else:
-                logging.warning(f"[search notebook] Notebook {search_text} not found!")
-                return {"status": "Not Found", "message": f"Notebook {search_text} not found"}
-                
+        else:
+            logging.debug(f"[SEARCH NOTEBOOK] - Notebook '{search_text}' not found!")
+            return None
         
-    def create_notebook(self, script: dict=None, default_interpreter="spark", uniq_name=False, run_all=False, delete_after_run=False, check_status=False):
+    def create_notebook(self, script: dict=None, default_interpreter="spark", uniq_name=False, run_all=False, delete_after_run=False, check_status=False, notebook_name:str = None):
         
         if script==None:
-            logging.error("Script not found")
+            logging.debug("Script not found")
             raise ValueError("Script not found, are you add script?🤔")
         
         # Validate name notebook
@@ -234,6 +229,15 @@ class ZeppelinAPI():
             print("UNIQ ID: "+ unique_id)
             script['name'] = script['name'] + unique_id 
             logging.debug(f"Name notebook change to :'{script['name']}'")
+            
+        if (notebook_name is not None): 
+            check_note = self.search_notebook(search_text=notebook_name)
+            # Check Notebook name existing or not
+            if check_note is None :
+                script['name'] = notebook_name
+            else: 
+                logging.warning("[CREATE NOTEBOOK : name notebook is existing, please change your notebook name.]")
+                raise ValueError("name notebook is existing, please change your notebook name.")
             
         # Validate Paragraft must be add
         if "paragraphs" not in script:
