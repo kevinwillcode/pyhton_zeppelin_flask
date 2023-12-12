@@ -99,7 +99,7 @@ def calculate_jip_execute():
             uniq_name=bool(True)
         ) # out : {'status': 'OK', 'message': '', 'body': '2JH177N4Y'}
         
-        thread = Thread(target=_combine_task)
+        thread = Thread(target=_combine_task(script_combine))
         thread.start()
         thread.join()
             
