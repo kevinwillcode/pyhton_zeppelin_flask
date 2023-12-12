@@ -60,6 +60,8 @@ class ZeppelinAPI():
                 
                 thread = Thread(target=_hit_api)
                 thread.start()
+                thread.join()
+                
                 return {"status": "Run all notebook execute in background process"}
             else: 
                 response = self.session.post(execute_all_url, cookies=self.__private_session_id, timeout=10, verify=False)
@@ -136,6 +138,7 @@ class ZeppelinAPI():
                 
                 thread = Thread(target=_hit_api)
                 thread.start()
+                thread.join()
                 
                 return {"status": f"Delete notebook success", "message": "Delete notebook ID :'{note_id}'"}
                 

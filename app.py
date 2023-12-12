@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 import logging
 import os
+from threading import Thread
 
 from zeppelin_api import ZeppelinAPI
 from utils.calculate import calculate_jip, combine_notebook, sample_notebook
@@ -20,7 +21,7 @@ zeppelin = ZeppelinAPI(base_url=ZEPPELIN_URL, username=USERZEP, password=PASSWOR
 
 @app.route('/')
 def hello_geek():
-    return '<h1>Hello from Flask</h2>'
+    return '<h2>This API for calculate_jip</h2>'
 
 @app.route("/test_notebook", methods=['GET'])
 def test_notebook():
@@ -59,8 +60,25 @@ def notebook():
         logging.exception("An error occurred: %s", str(e))
         # You may want to return an appropriate error response to the client
         return jsonify(error=f"An error occurred {str(e)}"), 500
+    
+    
 
-@app.route("/calculate_jip", methods=['POST'])
+def _combine_task(script):
+# Combine result Calculate
+    note_name = "calculate"
+    check_note = zeppelin.search_notebook(search_text=note_name) # {'id': '2JJEGXX4B', 'path': '/calculate'} or None
+    
+    if check_note is None:             
+        logging.debug("[CALCULATE JIP] - create notebook")
+        zeppelin.create_notebook(script=script, uniq_name=False, run_all=True, check_status=False, notebook_name=note_name) # out : {'status': 'OK', 'message': '', 'body': '2JH177N4Y'}
+        
+    else: 
+        # Running Notebook for combine data machine
+        logging.debug(f"[CALCULATE JIP] - Notebook '{note_name}' found !")
+        zeppelin.run_all_paragraft(note_id=str(check_note['id']))
+        logging.debug(f"[CALCULATE JIP] - Running notebook '{note_name}' Success")
+
+@app.route("/calculate_jip", methods=['POST','GET'])
 def calculate_jip_execute():
     machine_name = request.args.get("machineName") # OPJ
     as_of_week = request.args.get("asOfWeek") # 2367
@@ -81,28 +99,11 @@ def calculate_jip_execute():
             uniq_name=bool(True)
         ) # out : {'status': 'OK', 'message': '', 'body': '2JH177N4Y'}
         
-        # Combine result Calculate
-        note_name = "calculate"
-        check_note = zeppelin.search_notebook(search_text=note_name) # {'id': '2JJEGXX4B', 'path': '/calculate'} or None
-        
-        if check_note is None:             
-            logging.debug("[CALCULATE JIP] - create notebook")
-            zeppelin.create_notebook(script=script_combine, uniq_name=False, run_all=True, check_status=False, notebook_name=note_name) # out : {'status': 'OK', 'message': '', 'body': '2JH177N4Y'}
+        thread = Thread(target=_combine_task)
+        thread.start()
+        thread.join()
             
-            return {"status" : "Done", 
-                "calculate" : {
-                    "as_of_week" : as_of_week,
-                    "machine" : machine_name
-                    },
-                "message": f"Calculate has been execute"}
-            
-        else: 
-            # Running Notebook for combine data machine
-            logging.debug(f"[CALCULATE JIP] - Notebook '{note_name}' found !")
-            zeppelin.run_all_paragraft(note_id=str(check_note['id']))
-            logging.debug(f"[CALCULATE JIP] - Running notebook '{note_name}' Success")
-            
-            return {"status" : "Done", 
+        return {"status" : "Done", 
                 "calculate" : {
                     "as_of_week" : as_of_week,
                     "machine" : machine_name
@@ -114,6 +115,10 @@ def calculate_jip_execute():
         logging.exception("An error occurred: %s", str(e))
         # You may want to return an appropriate error response to the client
         return jsonify(error=f"An error occurred {str(e)}"), 500
+    
+@app.route("/delete-all-notebook", method=["GET"])
+def delete_all_notebook():
+    zeppelin.delete_note(delete_all=True)
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5000)

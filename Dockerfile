@@ -24,4 +24,4 @@ ENV PASSWORD admin
 
 EXPOSE 5000
 
-CMD ["gunicorn", "wsgi:app", "-b", "0.0.0.0:5000"]
+CMD ["gunicorn", "-c", "gunicorn.py", "wsgi:app", "-b", "0.0.0.0:5000"]
