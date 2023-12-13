@@ -19,6 +19,14 @@ app = Flask(__name__)
 
 zeppelin = ZeppelinAPI(base_url=ZEPPELIN_URL, username=USERZEP, password=PASSWORD)
 
+# Cache
+# status_calculate = {
+#     "running": False,
+#     "message": "",
+#     "as_of_week": "",
+#     "machine": ""
+# }
+
 @app.route('/')
 def hello_geek():
     return '<h2>This API for calculate_jip</h2>'
@@ -61,8 +69,6 @@ def notebook():
         # You may want to return an appropriate error response to the client
         return jsonify(error=f"An error occurred {str(e)}"), 500
     
-    
-
 def _combine_task(script):
 # Combine result Calculate
     note_name = "calculate"
@@ -91,6 +97,8 @@ def calculate_jip_execute():
     # script_sample = sample_notebook()
     
     try:
+        
+        # status_calculate["running"] = True
         # Create Notebook calculate
         zeppelin.create_notebook(
             script = script_calculate,
