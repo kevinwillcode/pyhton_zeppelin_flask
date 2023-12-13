@@ -20,12 +20,12 @@ app = Flask(__name__)
 zeppelin = ZeppelinAPI(base_url=ZEPPELIN_URL, username=USERZEP, password=PASSWORD)
 
 # Cache
-# status_calculate = {
-#     "running": False,
-#     "message": "",
-#     "as_of_week": "",
-#     "machine": ""
-# }
+status_calculate = {
+            "running": False,
+            "message": "",
+            "as_of_week": "",
+            "machine": ""
+        }
 
 @app.route('/')
 def hello_geek():
@@ -98,7 +98,15 @@ def calculate_jip_execute():
     
     try:
         
-        # status_calculate["running"] = True
+        if status_calculate["running"] == False:
+            status_calculate["running"] = True
+            status_calculate["machine"] = machine_name
+            status_calculate["as_of_week"] = as_of_week
+            status_calculate["message"] = "Calculation still running please wait..."
+            logging.debug(f"Calculation {str(status_calculate['machine'])} still running please wait...")
+        elif status_calculate["running"] == True:
+            return status_calculate
+            
         # Create Notebook calculate
         zeppelin.create_notebook(
             script = script_calculate,
@@ -110,7 +118,15 @@ def calculate_jip_execute():
         thread = Thread(target=_combine_task(script_combine))
         thread.start()
         thread.join()
-            
+        
+        # Change calculation 
+        status_calculate = {
+                    "running": False,
+                    "message": "",
+                    "as_of_week": "",
+                    "machine": ""
+                }
+        
         return {"status" : "Done", 
                 "calculate" : {
                     "as_of_week" : as_of_week,
