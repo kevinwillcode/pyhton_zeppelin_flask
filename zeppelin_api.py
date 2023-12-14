@@ -158,6 +158,7 @@ class ZeppelinAPI():
                 
                     if response.status_code == 200:
                         logging.info(response.json())  # out: {"status": "OK","message": ""}
+                        time.sleep(1)
                     else:
                         logging.error(str({"status": "Error Delete Notebook", "message": f"Unexpected status code: {response.status_code}"})) 
                         break 
