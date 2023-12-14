@@ -3,7 +3,6 @@ from flask import Flask, jsonify, request, abort
 import logging
 import os
 from threading import Thread
-from flask_caching import Cache
 
 from zeppelin_api import ZeppelinAPI
 from utils.calculate import calculate_jip, combine_notebook, sample_notebook
@@ -25,7 +24,6 @@ if ZEPPELIN_URL is None or USERZEP is None or PASSWORD is None:
     raise ValueError("One or more required environment variables are not set.")
 
 app = Flask(__name__)
-cache = Cache(app,config={"CACHE_TYPE": "simple"})
 
 zeppelin = ZeppelinAPI(base_url=ZEPPELIN_URL, username=USERZEP, password=PASSWORD)
 
@@ -117,7 +115,7 @@ def calculate_jip_execute():
         
             logging.debug(f"Calculation {str(status_calculate['machine'])} will running...")
         # Create Notebook calculate
-        zeppelin.create_notebook(
+        response = zeppelin.create_notebook(
             script = script_calculate,
             run_all=bool(request.args.get('runAll')),
             check_status=bool(request.args.get('checkStatus')),
@@ -136,12 +134,15 @@ def calculate_jip_execute():
                     "machine": ""
                 }
         
-        return {"status" : "Done", 
-                "calculate" : {
-                    "as_of_week" : as_of_week,
-                    "machine" : machine_name
-                    },
-                "message": f"Calculate has been execute"}
+        if (response['status'] == 'Error'):
+            return response
+        else :
+            return {"status" : "OK  ", 
+                    "calculate" : {
+                        "as_of_week" : as_of_week,
+                        "machine" : machine_name
+                        },
+                    "message": f"Calculate is done"}
 
     except Exception as e:
         # Log the exception for debugging purposes

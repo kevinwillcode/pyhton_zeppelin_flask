@@ -93,13 +93,13 @@ class ZeppelinAPI():
                 
                 if len(error_paragraphs) > 0 : 
                     logging.debug("Error Running Notebook ❌") 
-                    return {"status": "Error running notebook", "message": "There is an error in your code. Please check the notebook or contact the developer. 👨‍💻⚒️"}
+                    return {"status": "Error", "message": "There is an error when running notebook. Please check the notebook or contact the developer. 👨‍💻⚒️"}
                 
                 logging.debug("Notebook stiLl running...")
                 
                 if len(pending_paragraphs) == 0:
                     logging.debug("Notebook Running Success ✅")
-                    return {"status": "Success running notebook", "message": ""}
+                    return {"status": "OK", "message": f"Success running notebook id '{note_id}'"}
                 
             except requests.HTTPError as http_err:
                 logging.error(f"HTTP error occurred: {http_err} ❌")
@@ -274,12 +274,14 @@ class ZeppelinAPI():
                 
                 if check_status:
                     logging.info("Get Status Notebook...")
-                    self.get_status(self.note_id)
+                    response = self.get_status(self.note_id)
+                    if response['status'] == "Error":
+                        return response
                 
                 if (delete_after_run):
                     # Delete Notebook
                     self.delete_note(note_id=self.note_id)
-
+                    
             return response.json()
 
         except requests.HTTPError:
