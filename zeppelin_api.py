@@ -162,7 +162,6 @@ class ZeppelinAPI():
                         logging.error(str({"status": "Error Delete Notebook", "message": f"Unexpected status code: {response.status_code}"})) 
                         break 
                 
-                
             else: 
                 logging.debug(f"Delete Notebook ID {note_id}")
                 response = self.session.delete(url_base+note_id, cookies=self.__private_session_id, timeout=10, verify=False)

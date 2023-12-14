@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, abort
 import logging
 import os
 from threading import Thread
@@ -18,14 +18,6 @@ if ZEPPELIN_URL is None or USERZEP is None or PASSWORD is None:
 app = Flask(__name__)
 
 zeppelin = ZeppelinAPI(base_url=ZEPPELIN_URL, username=USERZEP, password=PASSWORD)
-
-# Cache
-status_calculate = {
-            "running": False,
-            "message": "",
-            "as_of_week": "",
-            "machine": ""
-        }
 
 @app.route('/')
 def hello_geek():
@@ -71,18 +63,18 @@ def notebook():
     
 def _combine_task(script):
 # Combine result Calculate
-    note_name = "calculate"
+    note_name = "combine_all_calculate_machine"
     check_note = zeppelin.search_notebook(search_text=note_name) # {'id': '2JJEGXX4B', 'path': '/calculate'} or None
     
     if check_note is None:             
-        logging.debug("[CALCULATE JIP] - create notebook")
+        logging.debug("[_combine_task] - create notebook")
         zeppelin.create_notebook(script=script, uniq_name=False, run_all=True, check_status=False, notebook_name=note_name) # out : {'status': 'OK', 'message': '', 'body': '2JH177N4Y'}
         
     else: 
         # Running Notebook for combine data machine
-        logging.debug(f"[CALCULATE JIP] - Notebook '{note_name}' found !")
+        logging.debug(f"[_combine_task] - Notebook '{note_name}' found !")
         zeppelin.run_all_paragraft(note_id=str(check_note['id']))
-        logging.debug(f"[CALCULATE JIP] - Running notebook '{note_name}' Success")
+        logging.debug(f"[_combine_task] - Running notebook '{note_name}' Success")
 
 @app.route("/calculate_jip", methods=['POST','GET'])
 def calculate_jip_execute():
@@ -90,22 +82,27 @@ def calculate_jip_execute():
     as_of_week = request.args.get("asOfWeek") # 2367
     uniq_name = request.args.get("uniqName") # "sample_notebook"
     
+    if machine_name is None or as_of_week is None :
+        abort(404, "Parameter no found")
+    
     script_calculate = calculate_jip(machine_name=machine_name, as_of_week=int(as_of_week))
     script_combine = combine_notebook()
     
     # Sample Notebook
     # script_sample = sample_notebook()
     
-    try:
-        
-        if status_calculate["running"] == False:
-            status_calculate["running"] = True
-            status_calculate["machine"] = machine_name
-            status_calculate["as_of_week"] = as_of_week
-            status_calculate["message"] = "Calculation still running please wait..."
-            logging.debug(f"Calculation {str(status_calculate['machine'])} still running please wait...")
-        elif status_calculate["running"] == True:
-            return status_calculate
+    try:      
+        # if status_calculate["running"]:
+        #     return status_calculate
+        # else:
+            
+        #     status_calculate = {
+        #             "running": True,
+        #             "message": str(machine_name),
+        #             "as_of_week": str(as_of_week),
+        #             "machine": "Calculation still running, please wait..."
+        #         }
+        #     logging.debug(f"Calculation {str(status_calculate['machine'])} still running, please wait...")
             
         # Create Notebook calculate
         zeppelin.create_notebook(
@@ -119,13 +116,13 @@ def calculate_jip_execute():
         thread.start()
         thread.join()
         
-        # Change calculation 
-        status_calculate = {
-                    "running": False,
-                    "message": "",
-                    "as_of_week": "",
-                    "machine": ""
-                }
+        # Change calculation if done
+        # status_calculate = {
+        #             "running": False,
+        #             "message": "",
+        #             "as_of_week": "",
+        #             "machine": ""
+        #         }
         
         return {"status" : "Done", 
                 "calculate" : {
@@ -140,7 +137,7 @@ def calculate_jip_execute():
         # You may want to return an appropriate error response to the client
         return jsonify(error=f"An error occurred {str(e)}"), 500
     
-@app.route("/delete-all-notebook", method=["GET"])
+@app.route("/delete-all-notebook", methods=["GET"])
 def delete_all_notebook():
     zeppelin.delete_note(delete_all=True)
 
