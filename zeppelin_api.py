@@ -71,56 +71,56 @@ class ZeppelinAPI():
             print(f"An unexpected error occurred: {err} ❌")          
 
     def get_status(self, note_id=None, interval=0.8, max_attempts=10000000, unlimited_attempts=False):
-        if(note_id == None):
-            logging.error("Error: 'note_id' not found 🔍🤔")
+        if not note_id:
+            logging.warning("Error: 'note_id' not found 🔍🤔")
             raise ValueError("Error: 'note_id' not found 🔍🤔")
-        
-        url_base = f"{self.base_url}/api/notebook/job/{note_id}" 
-        
+
+        url_base = f"{self.base_url}/api/notebook/{note_id}"
+
         attempts = 0
         while attempts < max_attempts:
             try:
                 response = self.session.get(url_base, cookies=self.__private_session_id, timeout=10, verify=False)
-                response.raise_for_status()  # Raises an HTTPError for bad responses
-                # print(response.json())  # Assuming the response is in JSON format
-                data = response.json()
-                paragraphs = data["body"]["paragraphs"]
-                
-                pending_paragraphs = [paragraph for paragraph in paragraphs if (paragraph["status"] == "RUNNING" ) or (paragraph["status"] == "PENDING" )] # out: array[{'id': 'paragraph_1700720673085_705953182', 'status': 'PENDING', 'started': 'Thu Nov 23 06:33:00 GMT 2023', 'finished': 'Thu Nov 23 06:28:29 GMT 2023', 'progress': '0'}] 
-                
-                # Check Error 
-                error_paragraphs = [paragraph for paragraph in paragraphs if (paragraph["status"] == "ERROR" )] 
-                
-                if len(error_paragraphs) > 0 : 
-                    logging.debug("Error Running Notebook ❌") 
-                    return {"status": "Error", "message": "There is an error when running notebook. Please check the notebook or contact the developer. 👨‍💻⚒️"}
-                
-                logging.debug("Notebook stiLl running...")
-                
-                if len(pending_paragraphs) == 0:
+                response.raise_for_status()
+
+                paragraphs = response.json()["body"]["paragraphs"]
+
+                error_paragraphs = [paragraph for paragraph in paragraphs if paragraph["status"] == "ERROR"]
+
+                if error_paragraphs:
+                    logging.warning(f"Error Running Notebook id '{note_id}' ❌")
+                    return {"status": "ERROR", "message": "There is an error when running notebook. Please check the notebook or contact the developer. 👨‍💻⚒️"}
+
+                logging.debug("Notebook still running...")
+
+                if not any(paragraph["status"] in {"RUNNING", "PENDING"} for paragraph in paragraphs):
                     logging.debug("Notebook Running Success ✅")
-                    return {"status": "OK", "message": f"Success running notebook id '{note_id}'"}
-                
+                    return {"status": "SUCCESS", "message": f"Running notebook id '{note_id}' success"}
+
             except requests.HTTPError as http_err:
                 logging.error(f"HTTP error occurred: {http_err} ❌")
                 raise ValueError(f"HTTP error occurred: {http_err} ❌")
-            
+
+            except requests.Timeout as timeout_err:
+                logging.error(f"Request timed out: {timeout_err} ❌")
+                raise ValueError(f"Request timed out: {timeout_err} ❌")
+
             except requests.RequestException as req_err:
                 logging.error(f"Request error occurred: {req_err} ❌")
                 raise ValueError(f"Request error occurred: {req_err} ❌")
-            
+
             except Exception as err:
                 logging.error(f"An unexpected error occurred: {err} ❌")
                 raise ValueError(f"An unexpected error occurred: {err} ❌")
-                
+
             attempts += 1
-            
-            if unlimited_attempts is True:
+
+            if unlimited_attempts:
                 max_attempts += 1
-            
+
             time.sleep(interval)
-            
-        return {"status":"Error", "message": f"notebook running to long, please check your notebook at ID: {note_id}, or contact developer"}
+
+        return {"status": "Error", "message": f"Too many attempts to run the notebook. Please check your notebook at ID: {note_id}, or contact the developer"}
     
     def delete_note(self, note_id=None, delete_all=False, background_process=False):
         
@@ -274,15 +274,15 @@ class ZeppelinAPI():
                 
                 if check_status:
                     logging.info("Get Status Notebook...")
-                    response = self.get_status(self.note_id)
-                    if response['status'] == "Error":
-                        return response
+                    resp_status = self.get_status(self.note_id)
+                    if resp_status["status"] == 'ERROR':
+                        return resp_status # out : {'status': 'ERROR', 'message': 'There is an error when running notebook. Please check the notebook or contact the developer. 👨\u200d💻⚒️'}
                 
                 if (delete_after_run):
                     # Delete Notebook
                     self.delete_note(note_id=self.note_id)
                     
-            return response.json()
+            return resp_status
 
         except requests.HTTPError:
             error_message = response.json()['message']

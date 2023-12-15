@@ -116,6 +116,27 @@ class TestZeppelinAPI(unittest.TestCase):
         else: 
             response = self.zeppelin.run_all_paragraft(note_id=str(check_note['id']))
             print(response)
+    
+    def test_response_error_notebook(self):
+        
+        script_test = {
+                "name": "calculate ",
+                "defaultInterpreterGroup": "python",
+                "paragraphs": [
+                    {
+                    "title": "Testing Wait",
+                    "text": "%python\nimport time\n\ntime.sleep(2)"
+                    },
+                    {
+                    "title": "Testing Wait",
+                    "text": "%python\nimport time\n\ntime.sleep(2)"
+                    }
+                ]
+            }
+        
+        response = self.zeppelin.create_notebook(script=script_test, uniq_name=True, run_all=True, check_status=True ) # out : {'status': 'OK', 'message': '', 'body': '2JH177N4Y'}
+        
+        print(str(response))
             
 if __name__ == '__main__':
     unittest.main()
